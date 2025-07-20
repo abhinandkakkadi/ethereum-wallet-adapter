@@ -1,29 +1,42 @@
-import { mainnet } from 'viem/chains'
-import './App.css'
-import { createPublicClient, http } from 'viem'
+import { base, mainnet, sepolia } from "viem/chains";
+import "./App.css";
+import { createPublicClient, http } from "viem";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
+import { createConfig, injected, useConnect, WagmiProvider } from "wagmi";
+import { metaMask, safe, walletConnect } from "wagmi/connectors";
 
-const client = createPublicClient({
-  chain: mainnet,
-  transport: http(),
-})
+const projectId = "wallet-connect-project-id";
+
+export const config = createConfig({
+  chains: [mainnet, base],
+  connectors: [injected(), walletConnect({ projectId }), metaMask(), safe()],
+  transports: {
+    [mainnet.id]: http(),
+    [base.id]: http(),
+  },
+});
+
+const queryClient = new QueryClient();
 
 function App() {
-  const [balance, setBalance] = useState(0)
-
-  async function getBalance() {
-   const balance = await client.getBalance({
-      address: "0x5fb0a1e08571501430F278e408CB4c04b0f64EE9"
-    })
-
-    setBalance(Number(balance.toString()))
-  }
-
   return (
-    <div className='flex justify-center items-center h-screen'>
-      <button onClick={getBalance}></button>
-      {balance && <p>Balcne - {balance}</p>}
-    </div>
-  )
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}></QueryClientProvider>
+    </WagmiProvider>
+  );
 }
 
-export default App
+export function WalletOptions() {
+  const {connectors, connect} = useConnect()
+
+  return connectors.map((connector)=>{
+    return <button key={connector.uid} onClick={() => connect({ connector })}>{connector.name}</button>
+  })
+
+}
+
+export default App;
