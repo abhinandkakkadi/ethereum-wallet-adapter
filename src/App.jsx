@@ -6,10 +6,24 @@ import {
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
-import { createConfig, injected, useAccount, useBalance, useConnect, useSendTransaction, WagmiProvider } from "wagmi";
+import { createConfig, injected, useAccount, useBalance, useConnect, useEnsAvatar, useEnsName, useSendTransaction, WagmiProvider } from "wagmi";
 import { metaMask, safe, walletConnect } from "wagmi/connectors";
+import { useReadContract } from 'wagmi'
+import { wagmiContractConfig } from "./contract";
 
 const projectId = "wallet-connect-project-id";
+
+function ReadContract() {
+  const { data: balance } = useReadContract({
+    ...wagmiContractConfig,
+    functionName: 'balanceOf',
+    args: ['0x03A71968491d55603FFe1b11A9e23eF013f75bCF'],
+  })
+
+  return (
+    <div>Balance: {balance?.toString()}</div>
+  )
+}
 
 const config = createConfig({
   chains: [mainnet, base],
@@ -29,6 +43,7 @@ function App() {
         <WalletConnector />
         <EthSend />
         <ConnectedAddress />
+        <ReadContract/>
       </QueryClientProvider>
     </WagmiProvider>
   );
@@ -57,7 +72,10 @@ function ConnectedAddress() {
   const {address} = useAccount()
   const {balance} = useBalance({address})
 
-  return <div>{address} - {balance?.data?.formatted}</div>
+  return <div>
+    <div>Name: {ensName}</div>
+    <div>{address} - {balance?.data?.formatted}</div>
+    </div>
 }
 
 
